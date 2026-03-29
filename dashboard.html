@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>لوحة التحكم — أخبار الزمالك</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=Tajawal:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+</head>
+<body class="dashboard-body">
+
+  <!-- LOGIN SCREEN -->
+  <div class="login-screen" id="loginScreen">
+    <div class="login-card">
+      <div class="login-logo">
+        <svg viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg" width="80" height="80">
+          <circle cx="40" cy="40" r="38" fill="#fff" stroke="#c8102e" stroke-width="3"/>
+          <text x="40" y="30" text-anchor="middle" font-family="Cairo,sans-serif" font-size="11" font-weight="900" fill="#c8102e">نادي</text>
+          <text x="40" y="48" text-anchor="middle" font-family="Cairo,sans-serif" font-size="16" font-weight="900" fill="#c8102e">الزمالك</text>
+          <text x="40" y="63" text-anchor="middle" font-family="Cairo,sans-serif" font-size="9" fill="#888">1911</text>
+        </svg>
+        <h2>بوابة المشرفين</h2>
+        <p>سجّل دخولك لإدارة أخبار الزمالك</p>
+      </div>
+      <div class="login-error" id="loginError" style="display:none;">
+        ❌ اسم المستخدم أو كلمة المرور غير صحيحة
+      </div>
+      <div class="form-group">
+        <label for="loginUsername">اسم المستخدم</label>
+        <input type="text" id="loginUsername" placeholder="أدخل اسم المستخدم" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label for="loginPassword">كلمة المرور</label>
+        <input type="password" id="loginPassword" placeholder="أدخل كلمة المرور" autocomplete="current-password" />
+      </div>
+      <button class="btn-primary btn-full" id="loginBtn">دخول</button>
+      <div class="login-hint">
+        <details>
+          <summary>حسابات تجريبية</summary>
+          <p><b>zamalek</b> / <b>zamalek123</b></p>
+          <p><b>admin</b> / <b>admin123</b></p>
+          <p><b>fan1</b> / <b>fan1pass</b></p>
+        </details>
+      </div>
+      <a href="index.html" class="back-link">← العودة للرئيسية</a>
+    </div>
+  </div>
+
+  <!-- DASHBOARD SCREEN -->
+  <div class="dashboard-screen" id="dashboardScreen" style="display:none;">
+
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg" width="50" height="50">
+          <circle cx="30" cy="30" r="28" fill="#c8102e"/>
+          <text x="30" y="24" text-anchor="middle" font-family="Cairo,sans-serif" font-size="8" font-weight="900" fill="#fff">نادي</text>
+          <text x="30" y="36" text-anchor="middle" font-family="Cairo,sans-serif" font-size="12" font-weight="900" fill="#fff">الزمالك</text>
+        </svg>
+        <span>لوحة التحكم</span>
+      </div>
+      <nav class="sidebar-nav">
+        <button class="sidebar-link active" data-tab="add">➕ إضافة خبر</button>
+        <button class="sidebar-link" data-tab="manage">📋 إدارة أخباري</button>
+        <button class="sidebar-link" data-tab="all">🌐 كل الأخبار</button>
+      </nav>
+      <div class="sidebar-user" id="sidebarUser"></div>
+      <button class="sidebar-logout" id="logoutBtn">تسجيل الخروج</button>
+      <a href="index.html" class="sidebar-home-link">← الرئيسية</a>
+    </aside>
+
+    <!-- Main Panel -->
+    <main class="dashboard-main">
+
+      <!-- Welcome Bar -->
+      <div class="dash-topbar">
+        <h1 class="dash-greeting" id="dashGreeting">مرحباً</h1>
+        <span class="dash-date" id="dashDate"></span>
+      </div>
+
+      <!-- TAB: Add News -->
+      <div class="dash-tab" id="tab-add">
+        <div class="dash-card">
+          <h2 class="dash-card-title">✏️ إضافة خبر جديد</h2>
+          <div class="form-group">
+            <label for="newsTitle">عنوان الخبر *</label>
+            <input type="text" id="newsTitle" placeholder="أدخل عنوان الخبر..." maxlength="200" />
+          </div>
+          <div class="form-group">
+            <label for="newsContent">محتوى الخبر *</label>
+            <textarea id="newsContent" rows="8" placeholder="أدخل تفاصيل الخبر هنا..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="newsImage">صورة الخبر</label>
+            <div class="image-upload-area" id="imageUploadArea">
+              <input type="file" id="newsImage" accept="image/*" style="display:none;" />
+              <div class="upload-placeholder" id="uploadPlaceholder">
+                <span class="upload-icon">🖼️</span>
+                <span>انقر لرفع صورة أو اسحبها هنا</span>
+                <span class="upload-hint">JPG, PNG, WEBP — الحد الأقصى 5 ميغابايت</span>
+              </div>
+              <img id="imagePreview" class="image-preview" style="display:none;" alt="معاينة" />
+            </div>
+            <button class="btn-outline btn-sm" id="clearImageBtn" style="display:none;">✕ إزالة الصورة</button>
+          </div>
+          <div class="form-actions">
+            <button class="btn-primary" id="submitNewsBtn">نشر الخبر</button>
+            <button class="btn-ghost" id="clearFormBtn">مسح</button>
+          </div>
+          <div class="form-feedback" id="formFeedback" style="display:none;"></div>
+        </div>
+      </div>
+
+      <!-- TAB: My News -->
+      <div class="dash-tab" id="tab-manage" style="display:none;">
+        <div class="dash-card">
+          <h2 class="dash-card-title">📋 أخباري</h2>
+          <div id="myNewsList"></div>
+        </div>
+      </div>
+
+      <!-- TAB: All News -->
+      <div class="dash-tab" id="tab-all" style="display:none;">
+        <div class="dash-card">
+          <h2 class="dash-card-title">🌐 جميع الأخبار</h2>
+          <div id="allNewsList"></div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="editModal" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>تعديل الخبر</h3>
+        <button class="modal-close" id="closeModal">✕</button>
+      </div>
+      <div class="form-group">
+        <label>عنوان الخبر</label>
+        <input type="text" id="editTitle" />
+      </div>
+      <div class="form-group">
+        <label>محتوى الخبر</label>
+        <textarea id="editContent" rows="6"></textarea>
+      </div>
+      <div class="form-group">
+        <label>صورة جديدة (اختياري)</label>
+        <input type="file" id="editImage" accept="image/*" />
+        <img id="editImagePreview" class="image-preview" style="margin-top:8px; max-height:120px;" />
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="saveEditBtn">حفظ التعديلات</button>
+        <button class="btn-ghost" id="cancelEditBtn">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
