@@ -1,77 +1,56 @@
 /* =============================================
    ZAMALEK NEWS — app.js
    Full JavaScript Logic
-   Storage: localStorage (persists in browser)
+   Storage: Supabase (cloud database)
    ============================================= */
 
 'use strict';
 
 // =============================================
-// STORAGE LAYER
+// SUPABASE CONNECTION
 // =============================================
 
-const STORAGE_KEY = 'zamalek_news_articles';
-const USERS_KEY   = 'zamalek_news_users';
+const SUPABASE_URL = 'https://yufhusuwgbkamhrmrrsw.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1Zmh1c3V3Z2JrYW1ocm1ycnN3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ3MjE2MzQsImV4cCI6MjA5MDI5NzYzNH0.jlvMToWyVQzeTVH-IkFb6hL6SYMUwhX9mKv5YkNIiOY';
 
+// Fetch news from Supabase
+async function getArticles() {
+  try {
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/news?select=*&order=created_at.desc`,
+      {
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`
+        }
+      }
+    );
+    if (!res.ok) throw new Error('فشل في جلب الأخبار');
+    const data = await res.json();
+    // Map Supabase columns to existing article format
+    return data.map(item => ({
+      id: item.id,
+      title: item.title || '',
+      content: item.description || '',
+      image: item.image || null,
+      author: 'أخبار الزمالك',
+      date: item.created_at
+    }));
+  } catch (err) {
+    console.error('Supabase Error:', err);
+    return [];
+  }
+}
+
+// Users (kept locally for dashboard login)
 const DEFAULT_USERS = [
   { username: 'zamalek', password: 'zamalek123', displayName: 'إدارة الزمالك' },
   { username: 'admin',   password: 'admin123',   displayName: 'المشرف العام' },
   { username: 'fan1',    password: 'fan1pass',    displayName: 'مشجع الزمالك' },
 ];
 
-function initUsers() {
-  if (!localStorage.getItem(USERS_KEY)) {
-    localStorage.setItem(USERS_KEY, JSON.stringify(DEFAULT_USERS));
-  }
-}
-
 function getUsers() {
-  initUsers();
-  return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
-}
-
-function getArticles() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if (!raw) return seedDefaultArticles();
-  return JSON.parse(raw);
-}
-
-function saveArticles(articles) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(articles));
-}
-
-function seedDefaultArticles() {
-  const seed = [
-    {
-      id: 'seed-001',
-      title: 'الزمالك يتوج بكأس السوبر الأفريقي للمرة الثالثة',
-      content: 'حقق نادي الزمالك إنجازاً تاريخياً جديداً بفوزه بكأس السوبر الأفريقي في مباراة مثيرة أمام منافسه القاري. وقاد الفريق الأبيض مهاجمه الخطير ليقدم أداءً استثنائياً أبهر جميع المتفرجين في الملعب وعلى الشاشات. وعلّق رئيس النادي على الفوز قائلاً إن هذا الإنجاز يعكس قيمة الزمالك على المستوى الأفريقي وسيُلهم الأجيال القادمة.',
-      image: null,
-      author: 'إدارة الزمالك',
-      username: 'zamalek',
-      date: new Date(Date.now() - 86400000 * 2).toISOString(),
-    },
-    {
-      id: 'seed-002',
-      title: 'صفقة انتقال نجم شاب إلى صفوف الفريق الأبيض',
-      content: 'أتمّ نادي الزمالك صفقة انتقال لاعب موهوب من منافسيه في الدوري المصري وذلك في إطار خطة النادي لتعزيز الخط الأمامي. ويُعدّ اللاعب الجديد من أبرز المواهب الشابة في كرة القدم المصرية، ويُتوقع أن يُشارك في المباريات القادمة مع الفريق الأول. وأبدى الجماهير ترحيباً حاراً بالانضمام الجديد عبر وسائل التواصل الاجتماعي.',
-      image: null,
-      author: 'مشجع الزمالك',
-      username: 'fan1',
-      date: new Date(Date.now() - 86400000 * 5).toISOString(),
-    },
-    {
-      id: 'seed-003',
-      title: 'تدريبات مكثفة قبيل الديربي المرتقب',
-      content: 'خاض لاعبو الزمالك جلسة تدريبية مكثفة في قلعة الجبل استعداداً للديربي المصري الكبير. وكان المدرب حريصاً على تكثيف التدريبات التكتيكية والبدنية لضمان أعلى مستوى من الجاهزية للمواجهة الكبيرة. وأكد القائد أن الفريق بكامل تركيزه وجاهز للمعركة وأن جماهير الزمالك العظيمة تستحق الفوز.',
-      image: null,
-      author: 'المشرف العام',
-      username: 'admin',
-      date: new Date(Date.now() - 86400000 * 8).toISOString(),
-    },
-  ];
-  saveArticles(seed);
-  return seed;
+  return DEFAULT_USERS;
 }
 
 // =============================================
@@ -108,13 +87,13 @@ function fileToBase64(file) {
 // HOMEPAGE LOGIC
 // =============================================
 
-function renderHomepage() {
+async function renderHomepage() {
   const featuredEl = document.getElementById('featuredArticle');
   const gridEl     = document.getElementById('newsGrid');
   const emptyEl    = document.getElementById('emptyState');
   if (!featuredEl) return; // not on homepage
 
-  const articles = getArticles().sort((a, b) => new Date(b.date) - new Date(a.date));
+  const articles = await getArticles();
 
   if (!articles.length) {
     emptyEl.style.display = 'block';
@@ -375,27 +354,34 @@ async function submitNews() {
   if (!title) { showFeedback('يرجى إدخال عنوان الخبر', 'error'); return; }
   if (!content) { showFeedback('يرجى إدخال محتوى الخبر', 'error'); return; }
 
-  const article = {
-    id:       generateId(),
-    title,
-    content,
-    image:    pendingImageBase64 || null,
-    author:   currentUser.displayName,
-    username: currentUser.username,
-    date:     new Date().toISOString(),
-  };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/news`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify({
+        title,
+        description: content,
+        image: pendingImageBase64 || null
+      })
+    });
+    if (!res.ok) throw new Error('فشل في حفظ الخبر');
 
-  const articles = getArticles();
-  articles.unshift(article);
-  saveArticles(articles);
+    showFeedback('✅ تم نشر الخبر بنجاح! سيظهر الآن على الصفحة الرئيسية.', 'success');
+    resetForm();
 
-  showFeedback('✅ تم نشر الخبر بنجاح! سيظهر الآن على الصفحة الرئيسية.', 'success');
-  resetForm();
-
-  // Switch to manage tab
-  setTimeout(() => {
-    document.querySelector('.sidebar-link[data-tab="manage"]').click();
-  }, 1500);
+    // Switch to manage tab
+    setTimeout(() => {
+      document.querySelector('.sidebar-link[data-tab="manage"]').click();
+    }, 1500);
+  } catch (err) {
+    console.error('Error saving:', err);
+    showFeedback('❌ حدث خطأ أثناء نشر الخبر', 'error');
+  }
 }
 
 function resetForm() {
@@ -422,13 +408,11 @@ function hideFeedback() {
 // MY NEWS LIST
 // =============================================
 
-function renderMyNews() {
+async function renderMyNews() {
   const container = document.getElementById('myNewsList');
   if (!container || !currentUser) return;
 
-  const articles = getArticles()
-    .filter(a => a.username === currentUser.username)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const articles = await getArticles();
 
   if (!articles.length) {
     container.innerHTML = `<div class="dash-empty">لم تنشر أي خبر بعد. ابدأ بإضافة أول خبر لك!</div>`;
@@ -439,18 +423,18 @@ function renderMyNews() {
   attachDashItemEvents(container);
 }
 
-function renderAllNews() {
+async function renderAllNews() {
   const container = document.getElementById('allNewsList');
   if (!container) return;
 
-  const articles = getArticles().sort((a, b) => new Date(b.date) - new Date(a.date));
+  const articles = await getArticles();
 
   if (!articles.length) {
     container.innerHTML = `<div class="dash-empty">لا توجد أخبار حتى الآن.</div>`;
     return;
   }
 
-  container.innerHTML = articles.map(a => buildDashItem(a, a.username === currentUser?.username)).join('');
+  container.innerHTML = articles.map(a => buildDashItem(a, true)).join('');
   attachDashItemEvents(container);
 }
 
@@ -484,28 +468,34 @@ function attachDashItemEvents(container) {
   });
 }
 
-function deleteArticle(id, container) {
+async function deleteArticle(id, container) {
   if (!confirm('هل تريد حذف هذا الخبر نهائياً؟')) return;
-  let articles = getArticles();
-  const art = articles.find(a => a.id === id);
-  if (!art || art.username !== currentUser.username) return;
-  articles = articles.filter(a => a.id !== id);
-  saveArticles(articles);
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/news?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`
+      }
+    });
+  } catch (err) {
+    console.error('Error deleting:', err);
+  }
   // Re-render the current list
   const myList = document.getElementById('myNewsList');
   const allList = document.getElementById('allNewsList');
-  if (myList && myList.innerHTML) renderMyNews();
-  if (allList && allList.innerHTML) renderAllNews();
+  if (myList && myList.innerHTML) await renderMyNews();
+  if (allList && allList.innerHTML) await renderAllNews();
 }
 
 // =============================================
 // EDIT MODAL
 // =============================================
 
-function openEdit(id) {
-  const articles = getArticles();
+async function openEdit(id) {
+  const articles = await getArticles();
   const art = articles.find(a => a.id === id);
-  if (!art || art.username !== currentUser.username) return;
+  if (!art) return;
 
   editingId = id;
   document.getElementById('editTitle').value = art.title;
@@ -533,21 +523,29 @@ async function saveEdit() {
 
   if (!title || !content) { alert('العنوان والمحتوى مطلوبان'); return; }
 
-  let articles = getArticles();
-  const idx = articles.findIndex(a => a.id === editingId);
-  if (idx === -1) return;
-
-  articles[idx].title   = title;
-  articles[idx].content = content;
-
+  const updateData = { title, description: content };
   if (imgFile) {
-    articles[idx].image = await fileToBase64(imgFile);
+    updateData.image = await fileToBase64(imgFile);
   }
 
-  saveArticles(articles);
+  try {
+    await fetch(`${SUPABASE_URL}/rest/v1/news?id=eq.${editingId}`, {
+      method: 'PATCH',
+      headers: {
+        'apikey': SUPABASE_KEY,
+        'Authorization': `Bearer ${SUPABASE_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(updateData)
+    });
+  } catch (err) {
+    console.error('Error updating:', err);
+  }
+
   closeModal();
-  renderMyNews();
-  renderAllNews();
+  await renderMyNews();
+  await renderAllNews();
 }
 
 // =============================================
